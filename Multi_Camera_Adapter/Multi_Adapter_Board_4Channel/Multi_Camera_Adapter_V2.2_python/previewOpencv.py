@@ -91,10 +91,10 @@ class WorkThread(QThread):
                 for item in cameras:
                     self.select_channel(item)
                     time.sleep(0.1)
-                    picam2.configure(capture_config)
+                    #picam2.configure(capture_config)
                     filename = f"capture_{item}_{datetime.now().isoformat()}.jpg"
-                    picam2.capture_file(filename)
-                    picam2.configure(preview_config)
+                    picam2.switch_mode_and_capture_file(capture_config, filename)
+                    #picam2.configure(preview_config)
                     time.sleep(0.5)
                 prev_time = cur_time
             for item in cameras:

@@ -86,7 +86,7 @@ class WorkThread(QThread):
             except Exception as e:
                 print("except: "+str(e))
 
-        prev_time, cur_time = time.time(), time.time()
+        prev_time, cur_time = 0, time.time()
         while True:
             cur_time = time.time()
             if cur_time - prev_time > self.capture_time:

@@ -1,6 +1,7 @@
 import RPi.GPIO as gp
 import os
 import sys
+import time
 from datetime import datetime
 
 gp.setwarnings(False)

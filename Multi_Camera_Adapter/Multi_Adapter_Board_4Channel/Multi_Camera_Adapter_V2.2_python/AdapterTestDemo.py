@@ -42,7 +42,7 @@ def main():
     capture(4)
 
 def capture(cam):
-    filename = f"images/capture_{item}_{datetime.now().isoformat()}.jpg"
+    filename = f"images/capture_{cam}_{datetime.now().isoformat()}.jpg"
     cmd = f"libcamera-still -o {filename}"
     os.system(cmd)
 

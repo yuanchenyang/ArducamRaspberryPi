@@ -114,7 +114,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     app = QApplication([])
-    window = QWidget(args.capture_time)
+    window = QWidget()
     layout_h = QHBoxLayout()
     layout_h2 = QHBoxLayout()
     layout_v = QVBoxLayout()
@@ -125,7 +125,7 @@ if __name__ == "__main__":
                        D=QLabel())
     # picam2 = Picamera2()
 
-    work = WorkThread()
+    work = WorkThread(args.capture_time)
 
     for label in image_label.values():
         label.setFixedSize(WIDTH, HEIGHT)

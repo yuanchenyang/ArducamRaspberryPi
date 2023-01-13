@@ -54,13 +54,6 @@ class WorkThread(QThread):
         channel_info = adapter_info.get(index)
         os.system(channel_info["i2c_cmd"]) # i2c write
 
-    def capture(self, index):
-        self.select_channel(index)
-        time.sleep(0.1)
-        filename = f"capture_{index}_{datetime.now().isoformat()}.jpg"
-        picam2.switch_mode_and_capture_file(self.capture_config, filename)
-        time.sleep(0.5)
-
     def run(self):
         global picam2
         # picam2 = Picamera2()
@@ -75,26 +68,34 @@ class WorkThread(QThread):
                 time.sleep(0.5)
                 if flag == False:
                     flag = True
-                else :
+                else:
                     picam2.close()
                 print("init1 "+ item)
                 picam2 = Picamera2()
-                picam2.configure(picam2.create_preview_configuration(
+                capture_config = picam2.create_still_configuration()
+                preview_config = picam2.create_preview_configuration(
                     main={"size": (WIDTH, HEIGHT),"format": "BGR888"}, buffer_count=2
-                ))
+                )
+                picam2.configure(preview_config)
                 picam2.start()
                 time.sleep(2)
                 picam2.capture_array(wait=False)
                 time.sleep(0.1)
             except Exception as e:
                 print("except: "+str(e))
-        self.capture_config = picam2.create_still_configuration()
+
         prev_time, cur_time = time.time(), time.time()
         while True:
             cur_time = time.time()
             if cur_time - prev_time > self.capture_time:
                 for item in cameras:
-                    self.capture(item)
+                    self.select_channel(index)
+                    time.sleep(0.1)
+                    picam2.configure(capture_config)
+                    filename = f"capture_{index}_{datetime.now().isoformat()}.jpg"
+                    picam2.capture_file(filename)
+                    picam2.configure(preview_config)
+                    time.sleep(0.5)
                 prev_time = cur_time
             for item in cameras:
                 self.select_channel(item)

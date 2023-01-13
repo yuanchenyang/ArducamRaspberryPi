@@ -1,5 +1,7 @@
 import RPi.GPIO as gp
 import os
+import sys
+from datetime import datetime
 
 gp.setwarnings(False)
 gp.setmode(gp.BOARD)
@@ -17,7 +19,7 @@ def main():
     gp.output(11, False)
     gp.output(12, True)
     capture(1)
-    print('Start testing the camera B') 
+    print('Start testing the camera B')
     i2c = "i2cset -y 1 0x70 0x00 0x05"
     os.system(i2c)
     gp.output(7, True)
@@ -38,14 +40,20 @@ def main():
     gp.output(11, True)
     gp.output(12, False)
     capture(4)
-    
+
 def capture(cam):
-    cmd = "libcamera-still -o capture_%d.jpg" % cam
+    filename = f"images/capture_{item}_{datetime.now().isoformat()}.jpg"
+    cmd = f"libcamera-still -o {filename}"
     os.system(cmd)
 
 if __name__ == "__main__":
-    main()
-
-    gp.output(7, False)
-    gp.output(11, False)
-    gp.output(12, True)
+    try:
+        while True:
+            main()
+            if len(sys.argv) == 1:
+                break
+            time.sleep(float(sys.argv[1]))
+    finally:
+        gp.output(7, False)
+        gp.output(11, False)
+        gp.output(12, True)

@@ -32,7 +32,7 @@ adapter_info = {
 
 def new_picam():
     cam = Picamera2()
-    cam.configure(picam2.create_preview_configuration(
+    cam.configure(cam.create_preview_configuration(
         main={"size": (WIDTH, HEIGHT),"format": "BGR888"}, buffer_count=2
     ))
     cam.start()

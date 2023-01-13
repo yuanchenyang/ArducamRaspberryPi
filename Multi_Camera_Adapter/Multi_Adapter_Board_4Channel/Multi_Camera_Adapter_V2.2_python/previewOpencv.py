@@ -58,20 +58,31 @@ class WorkThread(QThread):
         global picam2
         # picam2 = Picamera2()
         # picam2.configure( picam2.still_configuration(main={"size": (320, 240),"format": "BGR888"},buffer_count=1))
+
         flag = False
 
-        item = 'A'
-        self.select_channel(item)
-        self.init_i2c(item)
-        time.sleep(0.5)
-        picam2 = Picamera2()
-        capture_config = picam2.create_still_configuration()
-        preview_config = picam2.create_preview_configuration(
-            main={"size": (WIDTH, HEIGHT),"format": "BGR888"}, buffer_count=2
-        )
-        picam2.configure(preview_config)
-        picam2.start(show_preview=True)
-        time.sleep(1)
+        for item in cameras:
+            try:
+                self.select_channel(item)
+                self.init_i2c(item)
+                time.sleep(0.5)
+                if flag == False:
+                    flag = True
+                else:
+                    picam2.close()
+                print("init1 "+ item)
+                picam2 = Picamera2()
+                capture_config = picam2.create_still_configuration()
+                preview_config = picam2.create_preview_configuration(
+                    main={"size": (WIDTH, HEIGHT),"format": "BGR888"}, buffer_count=2
+                )
+                picam2.configure(preview_config)
+                picam2.start(show_preview=True)
+                time.sleep(2)
+                picam2.capture_array(wait=False)
+                time.sleep(0.1)
+            except Exception as e:
+                print("except: "+str(e))
 
         prev_time, cur_time = time.time(), time.time()
         while True:

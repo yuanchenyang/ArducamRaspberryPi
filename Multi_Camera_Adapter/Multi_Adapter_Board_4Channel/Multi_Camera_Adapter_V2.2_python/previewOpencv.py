@@ -95,7 +95,7 @@ class WorkThread(QThread):
                     picam2.close()
                     time.sleep(0.2)
                     filename = f"images/capture_{item}_{datetime.now().isoformat()}.jpg"
-                    cmd = f"libcamera-still -t 1 -o {filename}"
+                    cmd = f"libcamera-still -o {filename}"
                     os.system(cmd)
                     time.sleep(0.2)
                     picam2 = new_picam()

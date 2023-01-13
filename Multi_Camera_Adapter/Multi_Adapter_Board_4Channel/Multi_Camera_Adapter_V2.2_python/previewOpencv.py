@@ -1,4 +1,3 @@
-
 from ast import Try
 from PyQt5.QtWidgets import QLabel, QHBoxLayout, QVBoxLayout, QApplication, QWidget
 from picamera2 import Picamera2
@@ -7,12 +6,16 @@ from PyQt5.QtCore import QThread
 import RPi.GPIO as gp
 import time
 import os
+import argparse
+from datetime import datetime
 
-width = 320
-height = 240 
+SCALE = 60
+WIDTH = 4*SCALE
+HEIGHT = 3*SCALE
 
-adapter_info = {  
-    "A" : {   
+cameras = "ABCD"
+adapter_info = {
+    "A" : {
         "i2c_cmd":"i2cset -y 10 0x70 0x00 0x04",
         "gpio_sta":[0,0,1],
     }, "B" : {
@@ -29,16 +32,16 @@ adapter_info = {
 
 class WorkThread(QThread):
 
-    def __init__(self):
+    def __init__(self, capture_time=float('inf')):
         super(WorkThread,self).__init__()
+        self.capture_time = capture_time # in seconds
         gp.setwarnings(False)
         gp.setmode(gp.BOARD)
         gp.setup(7, gp.OUT)
         gp.setup(11, gp.OUT)
         gp.setup(12, gp.OUT)
 
-
-    def select_channel(self,index):
+    def select_channel(self, index):
         channel_info = adapter_info.get(index)
         if channel_info == None:
             print("Can't get this info")
@@ -47,9 +50,15 @@ class WorkThread(QThread):
         gp.output(11, gpio_sta[1])
         gp.output(12, gpio_sta[2])
 
-    def init_i2c(self,index):
+    def init_i2c(self, index):
         channel_info = adapter_info.get(index)
         os.system(channel_info["i2c_cmd"]) # i2c write
+
+    def capture(self, index):
+        self.select_channel(index)
+        time.sleep(0.1)
+        cmd = f"libcamera-still -t 0 -o capture_{index}_{datetime.now().isoformat()}.jpg"
+        os.system(cmd)
 
     def run(self):
         global picam2
@@ -58,19 +67,21 @@ class WorkThread(QThread):
 
         flag = False
 
-        for item in {"A","B","C","D"}:
+        for item in cameras:
             try:
                 self.select_channel(item)
                 self.init_i2c(item)
-                time.sleep(0.5) 
+                time.sleep(0.5)
                 if flag == False:
                     flag = True
                 else :
                     picam2.close()
-                    # time.sleep(0.5) 
+                    # time.sleep(0.5)
                 print("init1 "+ item)
                 picam2 = Picamera2()
-                picam2.configure(picam2.create_still_configuration(main={"size": (320, 240),"format": "BGR888"},buffer_count=2)) 
+                picam2.configure(picam2.create_still_configuration(
+                    main={"size": (WIDTH, HEIGHT),"format": "BGR888"},buffer_count=2
+                ))
                 picam2.start()
                 time.sleep(2)
                 picam2.capture_array(wait=False)
@@ -78,60 +89,58 @@ class WorkThread(QThread):
             except Exception as e:
                 print("except: "+str(e))
 
+        prev_time, cur_time = time.time(), time.time()
         while True:
-            for item in {"A","B","C","D"}:
+            cur_time = time.time()
+            if cur_time - prev_time > self.capture_time:
+                for item in cameras:
+                    self.capture(item)
+                prev_time = cur_time
+            for item in cameras:
                 self.select_channel(item)
                 time.sleep(0.02)
                 try:
                     buf = picam2.capture_array()
                     buf = picam2.capture_array()
-                    cvimg = QImage(buf, width, height,QImage.Format_RGB888)
+                    cvimg = QImage(buf, WIDTH, HEIGHT, QImage.Format_RGB888)
                     pixmap = QPixmap(cvimg)
-                    if item == 'A':
-                        image_label.setPixmap(pixmap)
-                    elif item == 'B':
-                        image_label2.setPixmap(pixmap)
-                    elif item == 'C':
-                        image_label3.setPixmap(pixmap)
-                    elif item == 'D':
-                        image_label4.setPixmap(pixmap)
+                    image_label[item].setPixmap(pixmap)
                 except Exception as e:
                     print("capture_buffer: "+ str(e))
 
-app = QApplication([])
-window = QWidget()
-layout_h = QHBoxLayout()
-layout_h2 = QHBoxLayout()
-layout_v = QVBoxLayout()
-image_label = QLabel()
-image_label2 = QLabel()
-image_label3 = QLabel()
-image_label4 = QLabel()
-
-# picam2 = Picamera2()
-
-work = WorkThread()
-
 if __name__ == "__main__":
-    image_label.setFixedSize(320, 240)
-    image_label2.setFixedSize(320, 240)
-    image_label2.setFixedSize(320, 240)
-    image_label2.setFixedSize(320, 240)
-    window.setWindowTitle("Qt Picamera2 Arducam Multi Camera Demo")
-    layout_h.addWidget(image_label)    
-    layout_h.addWidget(image_label2)
-    layout_h2.addWidget(image_label3)
-    layout_h2.addWidget(image_label4)
-    layout_v.addLayout(layout_h,20)
-    layout_v.addLayout(layout_h2,20)
-    window.setLayout(layout_v)
-    window.resize(660, 500)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--capture_time', type=float, default=float('inf'))
+    args = parser.parse_args()
 
+    app = QApplication([])
+    window = QWidget(args.capture_time)
+    layout_h = QHBoxLayout()
+    layout_h2 = QHBoxLayout()
+    layout_v = QVBoxLayout()
+
+    image_label = dict(A=QLabel(),
+                       B=QLabel(),
+                       C=QLabel(),
+                       D=QLabel())
+    # picam2 = Picamera2()
+
+    work = WorkThread()
+
+    for label in image_label.values():
+        label.setFixedSize(WIDTH, HEIGHT)
+    window.setWindowTitle("Qt Picamera2 Arducam Multi Camera Demo")
+    layout_h.addWidget(image_label['A'])
+    layout_h.addWidget(image_label['B'])
+    layout_h2.addWidget(image_label['C'])
+    layout_h2.addWidget(image_label['D'])
+    layout_v.addLayout(layout_h, 20)
+    layout_v.addLayout(layout_h2, 20)
+    window.setLayout(layout_v)
+    window.resize(WIDTH*2+20, HEIGHT*2+20)
     work.start()
-    
+
     window.show()
     app.exec()
     work.quit()
     picam2.close()
-
-

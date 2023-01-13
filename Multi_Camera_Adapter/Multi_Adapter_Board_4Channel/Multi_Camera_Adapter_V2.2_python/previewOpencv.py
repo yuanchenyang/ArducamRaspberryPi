@@ -79,8 +79,8 @@ class WorkThread(QThread):
                     picam2.close()
                 print("init1 "+ item)
                 picam2 = Picamera2()
-                picam2.configure(picam2.create_still_configuration(
-                    main={"size": (WIDTH, HEIGHT),"format": "BGR888"},buffer_count=2
+                picam2.configure(picam2.create_preview_configuration(
+                    main={"size": (WIDTH, HEIGHT),"format": "BGR888"}, buffer_count=2
                 ))
                 picam2.start()
                 time.sleep(2)

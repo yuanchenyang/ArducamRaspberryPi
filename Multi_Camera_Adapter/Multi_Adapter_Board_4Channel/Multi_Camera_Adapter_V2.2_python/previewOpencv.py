@@ -90,14 +90,8 @@ class WorkThread(QThread):
             if cur_time - prev_time > self.capture_time:
                 for item in cameras:
                     self.select_channel(item)
-                    filename = f"capture_{item}_{datetime.now().isoformat()}.jpg"
-                    cmd = f"libcamera-still -t 1 -o {filename}"
                     time.sleep(0.1)
-                    #picam2.configure(capture_config)
-                    #picam2.close()
-                    #os.system(cmd)
-                    #time.sleep(0.2)
-                    #picam2.start()
+                    filename = f"images/capture_{item}_{datetime.now().isoformat()}.jpg"
                     picam2.switch_mode_and_capture_file(capture_config, filename)
                     time.sleep(0.2)
                 prev_time = cur_time

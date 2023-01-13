@@ -57,8 +57,9 @@ class WorkThread(QThread):
     def capture(self, index):
         self.select_channel(index)
         time.sleep(0.1)
-        cmd = f"libcamera-still -t 0 -o capture_{index}_{datetime.now().isoformat()}.jpg"
-        os.system(cmd)
+        filename = f"capture_{index}_{datetime.now().isoformat()}.jpg"
+        picam2.switch_mode_and_capture_file(self.capture_config, filename)
+        time.sleep(0.5)
 
     def run(self):
         global picam2
@@ -76,7 +77,6 @@ class WorkThread(QThread):
                     flag = True
                 else :
                     picam2.close()
-                    # time.sleep(0.5)
                 print("init1 "+ item)
                 picam2 = Picamera2()
                 picam2.configure(picam2.create_still_configuration(
@@ -88,7 +88,7 @@ class WorkThread(QThread):
                 time.sleep(0.1)
             except Exception as e:
                 print("except: "+str(e))
-
+        self.capture_config = picam2.create_still_configuration()
         prev_time, cur_time = time.time(), time.time()
         while True:
             cur_time = time.time()

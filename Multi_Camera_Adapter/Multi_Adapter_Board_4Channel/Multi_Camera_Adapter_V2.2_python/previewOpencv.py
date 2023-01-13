@@ -72,7 +72,6 @@ class WorkThread(QThread):
                     picam2.close()
                 print("init1 "+ item)
                 picam2 = Picamera2()
-                capture_config = picam2.create_still_configuration()
                 preview_config = picam2.create_preview_configuration(
                     main={"size": (WIDTH, HEIGHT),"format": "BGR888"}, buffer_count=2
                 )
@@ -92,7 +91,7 @@ class WorkThread(QThread):
                     self.select_channel(item)
                     time.sleep(0.1)
                     filename = f"images/capture_{item}_{datetime.now().isoformat()}.jpg"
-                    picam2.switch_mode_and_capture_file(capture_config, filename)
+                    picam2.switch_mode_and_capture_file(picam2.create_still_configuration(), filename)
                     time.sleep(0.2)
                 prev_time = cur_time
             for item in cameras:

@@ -91,8 +91,8 @@ class WorkThread(QThread):
             cur_time = time.time()
             if cur_time - prev_time > self.capture_time:
                 for item in cameras:
-                    self.select_channel(item)
                     picam2.close()
+                    self.select_channel(item)
                     time.sleep(0.2)
                     filename = f"images/capture_{item}_{datetime.now().isoformat()}.jpg"
                     cmd = f"libcamera-still -o {filename}"

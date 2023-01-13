@@ -30,6 +30,17 @@ adapter_info = {
     }
 }
 
+def new_picam():
+    cam = Picamera2()
+    cam.configure(picam2.create_preview_configuration(
+        main={"size": (WIDTH, HEIGHT),"format": "BGR888"}, buffer_count=2
+    ))
+    cam.start()
+    time.sleep(1)
+    cam.capture_array(wait=False)
+    time.sleep(0.2)
+    return cam
+
 class WorkThread(QThread):
 
     def __init__(self, capture_time=float('inf')):
@@ -71,15 +82,7 @@ class WorkThread(QThread):
                 else:
                     picam2.close()
                 print("init1 "+ item)
-                picam2 = Picamera2()
-                preview_config = picam2.create_preview_configuration(
-                    main={"size": (WIDTH, HEIGHT),"format": "BGR888"}, buffer_count=2
-                )
-                picam2.configure(preview_config)
-                picam2.start()
-                time.sleep(2)
-                picam2.capture_array(wait=False)
-                time.sleep(0.1)
+                picam2 = new_picam()
             except Exception as e:
                 print("except: "+str(e))
 
@@ -89,8 +92,12 @@ class WorkThread(QThread):
             if cur_time - prev_time > self.capture_time:
                 for item in cameras:
                     self.select_channel(item)
-                    time.sleep(0.1)
-                    filename = f"images/capture_{item}_{datetime.now().isoformat()}.jpg"
+                    picam2.close()
+                    picam2 = new_picam()
+                    filename = f"capture_{item}_{datetime.now().isoformat()}.jpg"
+                    #cmd = f"libcamera-still -t 1 -o {filename}"
+                    #os.system(cmd)
+                    time.sleep(0.2)
                     picam2.switch_mode_and_capture_file(picam2.create_still_configuration(), filename)
                     time.sleep(0.2)
                 prev_time = cur_time
